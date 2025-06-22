@@ -1,0 +1,16 @@
+servidor = uvicorn workout_api.main:app --reload
+
+create-migrations:
+    $env:PYTHONPATH="$env:PYTHONPATH;$(Get-Location)"; alembic revision --autogenerate -m "init_db"
+
+run-migration:
+    $env:PYTHONPATH="$env:PYTHONPATH;$(Get-Location)"; alembic upgrade head
+
+
+Ativar virtualenv
+# Se estiver na pasta do projeto
+workoutapi\Scripts\activate
+
+
+Docker
+    docker-compose up -d 
