@@ -13,6 +13,8 @@ from workout_api.centro_treinamento.models import CentroTreinamentoModel
 from workout_api.contrib.dependencies import DatabaseDependency
 from sqlalchemy.future import select
 
+from sqlalchemy import exc
+
 router = APIRouter()
 
 
@@ -57,6 +59,14 @@ async def post(db_session: DatabaseDependency, atleta_in: AtletaIn = Body(...)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"O centro de treinamento {centro_treinamento_nome} não foi encontrado.",
         )
+
+    # Valida o CPF
+    if not validar_cpf(atleta_in.cpf):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"CPF inválido: {atleta_in.cpf}",
+        )
+
     try:
         atleta_out = AtletaOut(
             id=uuid4(), created_at=datetime.utcnow(), **atleta_in.model_dump()
@@ -70,6 +80,11 @@ async def post(db_session: DatabaseDependency, atleta_in: AtletaIn = Body(...)):
 
         db_session.add(atleta_model)
         await db_session.commit()
+    except exc.IntegrityError:
+        raise HTTPException(
+            status_code=303,
+            detail=f"Já existe um atleta cadastrado com o cpf: {atleta_in.cpf}",
+        )
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
